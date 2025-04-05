@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game Demo</title>
+    <style>
+      html, body {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            margin: 0;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .canvas-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="canvas-container">
+        <canvas id="cubeCanvas"></canvas>
+    </div>
+
+    <script>
+        // Get the canvas and context
+        const canvas = document.getElementById('cubeCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set initial canvas size
+        function resizeCanvas() {
+            const container = document.querySelector('.canvas-container');
+            const maxWidth = container.clientWidth;
+            const maxHeight = container.clientHeight;
+            
+            // Maintain aspect ratio of 720:576
+            const aspectRatio = 720 / 576;
+            
+            let width = maxWidth;
+            let height = width / aspectRatio;
+            
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = height * aspectRatio;
+            }
+            
+            // Set canvas size (capped at original dimensions)
+            canvas.width = Math.min(width, 720);
+            canvas.height = Math.min(height, 576);
+        }
+        
+        // Initial resize and event listener
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Grid settings
+        const grid = {
+            cellSize: 20,
+            width: 0,
+            height: 0
+        };
+        
+        // Update grid dimensions
+        function updateGridDimensions() {
+            grid.width = Math.floor(canvas.width / grid.cellSize);
+            grid.height = Math.floor(canvas.height / grid.cellSize);
+        }
+        
+        // Snake properties
+        const snake = {
+            body: [],
+            direction: 'right',
+            nextDirection: 'right',
+            speed: 5, // frames per move
+            frameCount: 0,
+            initialize: function() {
+                // Start with 3 body segments
+                this.body = [
+                    {x: 3, y: Math.floor(grid.height / 2)},
+                    {x: 2, y: Math.floor(grid.height / 2)},
+                    {x: 1, y: Math.floor(grid.height / 2)}
+                ];
+                this.direction = 'right';
+                this.nextDirection = 'right';
+            },
+            move: function() {
+                // Only move every few frames
+                this.frameCount++;
+                if (this.frameCount < this.speed) return;
+                this.frameCount = 0;
+                
+                // Update direction
+                this.direction = this.nextDirection;
+                
+                // Calculate new head position
+                const head = {x: this.body[0].x, y: this.body[0].y};
+                
+                switch(this.direction) {
+                    case 'up': head.y--; break;
+                    case 'down': head.y++; break;
+                    case 'left': head.x--; break;
+                    case 'right': head.x++; break;
+                }
+                
+                // Check for wrap around
+                if (head.x < 0) head.x = grid.width - 1;
+                if (head.x >= grid.width) head.x = 0;
+                if (head.y < 0) head.y = grid.height - 1;
+                if (head.y >= grid.height) head.y = 0;
+                
+                // Check if snake ate food
+                if (head.x === food.position.x && head.y === food.position.y) {
+                    // Don't remove the tail
+                    food.respawn();
+                } else {
+                    // Remove the tail
+                    this.body.pop();
+                }
+                
+                // Check for collision with self
+                for (let i = 0; i < this.body.length; i++) {
+                    if (this.body[i].x === head.x && this.body[i].y === head.y) {
+                        // Collision! Reset the game
+                        this.initialize();
+                        return;
+                    }
+                }
+                
+                // Add new head
+                this.body.unshift(head);
+                
+                // AI: Choose next direction
+                this.chooseDirection();
+            },
+            chooseDirection: function() {
+                // Simple AI to move toward food while avoiding collisions
+                const head = this.body[0];
+                const possibleDirections = [];
+                
+                // Check which directions are safe
+                const directions = ['up', 'right', 'down', 'left'];
+                directions.forEach(dir => {
+                    let newX = head.x;
+                    let newY = head.y;
+                    
+                    switch(dir) {
+                        case 'up': newY--; break;
+                        case 'down': newY++; break;
+                        case 'left': newX--; break;
+                        case 'right': newX++; break;
+                    }
+                    
+                    // Check wrap around
+                    if (newX < 0) newX = grid.width - 1;
+                    if (newX >= grid.width) newX = 0;
+                    if (newY < 0) newY = grid.height - 1;
+                    if (newY >= grid.height) newY = 0;
+                    
+                    // Check if this direction would cause a collision
+                    let collision = false;
+                    for (let i = 0; i < this.body.length - 1; i++) {
+                        if (this.body[i].x === newX && this.body[i].y === newY) {
+                            collision = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!collision) {
+                        possibleDirections.push({
+                            direction: dir,
+                            distance: Math.abs(food.position.x - newX) + Math.abs(food.position.y - newY)
+                        });
+                    }
+                });
+                
+                // Choose the direction that gets us closest to the food
+                if (possibleDirections.length > 0) {
+                    possibleDirections.sort((a, b) => a.distance - b.distance);
+                    // 80% chance to choose the best direction, 20% chance to choose a random direction
+                    if (Math.random() < 0.8) {
+                        this.nextDirection = possibleDirections[0].direction;
+                    } else {
+                        this.nextDirection = possibleDirections[Math.floor(Math.random() * possibleDirections.length)].direction;
+                    }
+                }
+                // If no safe directions, continue with current direction
+            }
+        };
+        
+        // Food properties
+        const food = {
+            position: {x: 0, y: 0},
+            respawn: function() {
+                let validPosition = false;
+                while (!validPosition) {
+                    this.position.x = Math.floor(Math.random() * grid.width);
+                    this.position.y = Math.floor(Math.random() * grid.height);
+                    
+                    // Check if food would spawn on snake
+                    validPosition = true;
+                    for (let i = 0; i < snake.body.length; i++) {
+                        if (snake.body[i].x === this.position.x && snake.body[i].y === this.position.y) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                }
+            }
+        };
+        
+        // Initialize game
+        function initGame() {
+            updateGridDimensions();
+            snake.initialize();
+            food.respawn();
+        }
+        
+        // Draw function
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Move snake
+            snake.move();
+            
+            // Draw background grid
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= grid.width; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * grid.cellSize, 0);
+                ctx.lineTo(x * grid.cellSize, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= grid.height; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * grid.cellSize);
+                ctx.lineTo(canvas.width, y * grid.cellSize);
+                ctx.stroke();
+            }
+            
+            // Draw food with glow effect
+            ctx.fillStyle = 'red';
+            ctx.shadowColor = 'red';
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.beginPath();
+            ctx.arc(
+                food.position.x * grid.cellSize + grid.cellSize / 2,
+                food.position.y * grid.cellSize + grid.cellSize / 2,
+                grid.cellSize / 2 - 2,
+                0, Math.PI * 2
+            );
+            ctx.fill();
+            
+            // Draw snake with glow effect for head
+            for (let i = 0; i < snake.body.length; i++) {
+                // Different appearance for head vs body
+                if (i === 0) {
+                    ctx.fillStyle = 'white';
+                    ctx.shadowColor = 'white';
+                    ctx.shadowBlur = 15;
+                } else {
+                    ctx.fillStyle = '#CCCCCC';
+                    ctx.shadowBlur = 0;
+                }
+                
+                ctx.fillRect(
+                    snake.body[i].x * grid.cellSize + 1,
+                    snake.body[i].y * grid.cellSize + 1,
+                    grid.cellSize - 2,
+                    grid.cellSize - 2
+                );
+            }
+        }
+        
+        // Animation loop
+        function animate() {
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        // Handle resize
+        window.addEventListener('resize', function() {
+            resizeCanvas();
+            updateGridDimensions();
+        });
+        
+        // Initialize and start animation
+        initGame();
+        animate();
+    </script>
+</body>
+</html>

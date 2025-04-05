@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="10">
+    <title>Nerdy Quote Display</title>
+    <style>
+      html, body {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            margin: 0;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+        .text-container {
+            width: 720px;
+            height: 576px;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+            box-sizing: border-box;
+            text-align: center;
+            overflow: hidden;
+        }
+        .quote {
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 2rem; /* Starting with a more moderate font size */
+            font-weight: bold;
+            text-shadow: 0 0 5px #fff, 0 0 10px #5271ff;
+            line-height: 1.2;
+            white-space: pre;
+            display: block;
+            width: 100%;
+            overflow: visible;
+            margin: 0;
+            padding: 0;
+        }
+        .author {
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 1.7rem;
+            margin-top: 30px;
+            text-shadow: 0 0 3px #fff, 0 0 7px #5271ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="text-container">
+        <pre class="quote"></pre>
+        <div class="author"></div>
+    </div>
+</body>
+<script>
+    // Collection of ASCII art
+    const asciiArt = [
+        {
+            art: `
+  /\\_/\\  
+ ( o.o ) 
+  > ^ <  `,
+            title: "ASCII Cat"
+        },
+        {
+            art: `
+    _____
+   /     \\
+  | () () |
+   \\  ^  /
+    |||||   `,
+            title: "Robot Head"
+        },
+        {
+            art: `
+     __         __
+    /  \\_______/  \\
+   /               \\
+  /                 \\
+ /                   \\
+(                     )
+ \\                   /
+  \\_________________/  `,
+            title: "UFO"
+        },
+        {
+            art: `
+     ,_     _,
+     |\\\\___//|
+     |=6   6=|
+     \\=._Y_.=/
+      )  \`  (    ,
+     /       \\  ((
+     |       |   ))
+    /| |   | |\\_//
+    \\| |._.| |/-\`
+     '"'   '"'`,
+            title: "ASCII Owl"
+        }
+    ];
+    
+    // Function to adjust font size to fit container
+    function adjustFontSizeToFit(element, container) {
+        // Start with the current font size
+        let fontSize = parseFloat(window.getComputedStyle(element).fontSize);
+        const maxSize = fontSize; // Don't go larger than initial size
+        const minSize = 0.5; // Don't go smaller than 0.5rem
+        
+        // Reset to max size first
+        element.style.fontSize = `${maxSize}px`;
+        
+        // Check if content overflows
+        const isOverflowing = element.scrollWidth > container.clientWidth || 
+                              element.scrollHeight > (container.clientHeight * 0.7); // Allow space for title
+        
+        // If not overflowing, we're good
+        if (!isOverflowing) {
+            return;
+        }
+        
+        // Binary search to find optimal font size
+        let low = minSize;
+        let high = maxSize;
+        
+        while (low <= high) {
+            // Try the middle size
+            const mid = (low + high) / 2;
+            element.style.fontSize = `${mid}px`;
+            
+            // Check if it overflows
+            if (element.scrollWidth > container.clientWidth || 
+                element.scrollHeight > (container.clientHeight * 0.7)) {
+                // Still too big
+                high = mid - 0.5;
+            } else {
+                // Could be bigger
+                low = mid + 0.5;
+            }
+            
+            // Break if we're at the resolution limit
+            if (high - low < 0.5) {
+                break;
+            }
+        }
+        
+        // Set to the final size that doesn't overflow
+        element.style.fontSize = `${high}px`;
+    }
+    
+    // Display random ASCII art
+    function displayRandomAsciiArt() {
+        try {
+            // Select a random ASCII art from the array
+            const randomIndex = Math.floor(Math.random() * asciiArt.length);
+            const art = asciiArt[randomIndex];
+            
+            const artElement = document.querySelector('.quote');
+            const titleElement = document.querySelector('.author');
+            const container = document.querySelector('.text-container');
+            
+            // Display the ASCII art (no typewriter effect to preserve formatting)
+            artElement.textContent = art.art;
+            titleElement.textContent = art.title;
+            
+            // Adjust font size to ensure the ASCII art fits
+            adjustFontSizeToFit(artElement, container);
+            
+        } catch (error) {
+            console.error('Error displaying ASCII art:', error);
+            // Fallback ASCII art if something goes wrong
+            const artElement = document.querySelector('.quote');
+            const titleElement = document.querySelector('.author');
+            
+            artElement.textContent = `
+   _____
+  / ____|
+ | |  __  ___
+ | | |_ |/ _ \\
+ | |__| | (_) |
+  \\_____|\\___/`;
+            titleElement.textContent = "Error Display";
+        }
+    }
+
+    // Display ASCII art when the page loads
+    window.addEventListener('DOMContentLoaded', displayRandomAsciiArt);
+</script>
+</html>

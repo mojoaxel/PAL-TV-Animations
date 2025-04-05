@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game of Life Simulator</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // Settings
+        const CELL_SIZE = 16;
+        const MAX_AGE = 30;
+        const SCREEN_WIDTH = 720;
+        const SCREEN_HEIGHT = 576;
+
+        // Setup canvas
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let grid = [];
+        
+        // Set canvas size with correct aspect ratio
+        function resizeCanvas() {
+            const maxWidth = window.innerWidth;
+            const maxHeight = window.innerHeight;
+            const aspectRatio = SCREEN_WIDTH / SCREEN_HEIGHT;
+            
+            let width = maxWidth;
+            let height = width / aspectRatio;
+            
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = height * aspectRatio;
+            }
+            
+            canvas.width = Math.min(width, SCREEN_WIDTH);
+            canvas.height = Math.min(height, SCREEN_HEIGHT);
+            
+            initGame();
+        }
+        
+        // Initialize the game
+        function initGame() {
+            const cols = Math.floor(canvas.width / CELL_SIZE);
+            const rows = Math.floor(canvas.height / CELL_SIZE);
+            
+            // Create empty grid - using objects to track age of cells
+            grid = Array(rows).fill().map(() => 
+                Array(cols).fill().map(() => ({ alive: false, age: 0 }))
+            );
+            
+            // Add initial random cells (approximately 20%)
+            const cellCount = Math.floor(rows * cols * 0.2);
+            for (let i = 0; i < cellCount; i++) {
+                const x = Math.floor(Math.random() * cols);
+                const y = Math.floor(Math.random() * rows);
+                grid[y][x] = { alive: true, age: 1 };
+            }
+        }
+        
+        // Add a random cell
+        function addRandomCell() {
+            const cols = grid[0].length;
+            const rows = grid.length;
+            const x = Math.floor(Math.random() * cols);
+            const y = Math.floor(Math.random() * rows);
+            grid[y][x] = { alive: true, age: 1 };
+        }
+        
+        // Calculate next generation
+        function nextGeneration() {
+            const rows = grid.length;
+            const cols = grid[0].length;
+            const newGrid = Array(rows).fill().map(() => 
+                Array(cols).fill().map(() => ({ alive: false, age: 0 }))
+            );
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const neighbors = countNeighbors(x, y);
+                    const cell = grid[y][x];
+                    
+                    // Apply Conway's Game of Life rules
+                    if (cell.alive && (neighbors === 2 || neighbors === 3)) {
+                        // Cell stays alive and ages by 1 cycle
+                        const newAge = cell.age + 1;
+                        // If the cell has been alive for MAX_AGE cycles, it dies
+                        if (newAge <= MAX_AGE) {
+                            newGrid[y][x] = { alive: true, age: newAge };
+                        }
+                    } else if (!cell.alive && neighbors === 3) {
+                        // New cell is born
+                        newGrid[y][x] = { alive: true, age: 1 };
+                    }
+                }
+            }
+            
+            grid = newGrid;
+        }
+        
+        // Count neighbors with edge wrapping
+        function countNeighbors(x, y) {
+            const rows = grid.length;
+            const cols = grid[0].length;
+            let count = 0;
+            
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+                    
+                    // Handle edge wrapping
+                    const nx = (x + dx + cols) % cols;
+                    const ny = (y + dy + rows) % rows;
+                    
+                    if (grid[ny][nx].alive) count++;
+                }
+            }
+            
+            return count;
+        }
+        
+        // Draw everything
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const rows = grid.length;
+            const cols = grid[0].length;
+            
+            // Draw grid lines (no shadow)
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1;
+            
+            // Draw vertical grid lines
+            for (let x = 0; x <= cols; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * CELL_SIZE, 0);
+                ctx.lineTo(x * CELL_SIZE, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Draw horizontal grid lines
+            for (let y = 0; y <= rows; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * CELL_SIZE);
+                ctx.lineTo(canvas.width, y * CELL_SIZE);
+                ctx.stroke();
+            }
+            
+            // Draw cells with glow - vary color based on cell age
+            ctx.shadowBlur = 5;
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const cell = grid[y][x];
+                    if (cell.alive) {
+                        // Color cells based on age - newer cells brighter, older cells darker gray
+                        const ageRatio = cell.age / MAX_AGE;
+                        const colorValue = 255 - Math.floor(200 * ageRatio); // Goes from 255 (white) to 55 (dark gray)
+                        ctx.fillStyle = `rgb(${colorValue}, ${colorValue}, ${colorValue})`;
+                        ctx.shadowColor = ctx.fillStyle;
+                        
+                        ctx.fillRect(
+                            x * CELL_SIZE + 1, 
+                            y * CELL_SIZE + 1, 
+                            CELL_SIZE - 2, 
+                            CELL_SIZE - 2
+                        );
+                    }
+                }
+            }
+        }
+        
+        // Game loop with speed control
+        let frameCount = 0;
+        function gameLoop() {
+            // Update logic
+            frameCount++;
+            if (frameCount >= 12) {  // Run simulation at reduced speed
+                frameCount = 0;
+                nextGeneration();
+            }
+            
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initial setup
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Add random cell every 5 seconds
+        setInterval(addRandomCell, 5000);
+        
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>

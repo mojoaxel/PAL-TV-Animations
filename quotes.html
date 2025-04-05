@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="10">
+    <title>Nerdy Quote Display</title>
+    <style>
+      html, body {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            margin: 0;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+        .text-container {
+            width: 720px;
+            height: 576px;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .quote {
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 2.8rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px #fff, 0 0 10px #5271ff;
+            line-height: 1.4;
+        }
+        .author {
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 1.7rem;
+            margin-top: 30px;
+            text-shadow: 0 0 3px #fff, 0 0 7px #5271ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="text-container">
+        <div class="quote"></div>
+        <div class="author"></div>
+    </div>
+</body>
+<script>
+    // Typewriter animation function
+    function typewriterEffect(element, text, speed, callback) {
+        let i = 0;
+        element.textContent = '';
+        
+        const typing = setInterval(() => {
+            if (i < text.length) {
+                element.textContent += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(typing);
+                if (callback) callback();
+            }
+        }, speed);
+    }
+    
+    // Fetch a random quote from the quotes.json file
+    async function fetchQuote() {
+        try {
+            // Load quotes from local JSON file
+            const response = await fetch('quotes.json');
+            const quotes = await response.json();
+            
+            // Select a random quote from the loaded array
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            const quote = quotes[randomIndex];
+            
+            const quoteElement = document.querySelector('.quote');
+            const authorElement = document.querySelector('.author');
+            
+            // Clear existing text
+            quoteElement.textContent = '';
+            authorElement.textContent = '';
+            
+            // Start typewriter animation for quote
+            typewriterEffect(quoteElement, `"${quote.text}"`, 50, () => {
+                // After quote is done, start typewriter for author
+                typewriterEffect(authorElement, `- ${quote.author}`, 50);
+            });
+            
+        } catch (error) {
+            console.error('Error loading quotes:', error);
+            // Fallback quote if loading fails
+            const quoteElement = document.querySelector('.quote');
+            const authorElement = document.querySelector('.author');
+            
+            typewriterEffect(quoteElement, `"Code is like humor. When you have to explain it, it's bad."`, 50, () => {
+                typewriterEffect(authorElement, `- Cory House`, 50);
+            });
+        }
+    }
+
+    // Load a quote when the page loads
+    window.addEventListener('DOMContentLoaded', fetchQuote);
+</script>
+</html>

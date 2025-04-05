@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="10">
+    <title>Nerdy Quote Display</title>
+    <style>
+      html, body {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            margin: 0;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+        .text-container {
+            width: 720px;
+            height: 576px;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+            box-sizing: border-box;
+            text-align: center;
+            overflow: hidden;
+        }
+        .quote {
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 2rem; /* Starting with a more moderate font size */
+            font-weight: bold;
+            text-shadow: 0 0 5px #fff, 0 0 10px #5271ff;
+            line-height: 1.2;
+            white-space: pre;
+            display: block;
+            width: 100%;
+            overflow: visible;
+            margin: 0;
+            padding: 0;
+        }
+        .author {
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 1.7rem;
+            margin-top: 30px;
+            text-shadow: 0 0 3px #fff, 0 0 7px #5271ff;
+        }
+        .navigation {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+            width: 80%;
+        }
+        .nav-button {
+            padding: 12px 20px;
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+            border-radius: 5px;
+            font-family: "Courier New", monospace;
+            font-size: 1.3rem;
+            cursor: pointer;
+            text-decoration: none;
+            text-shadow: 0 0 3px #fff;
+            transition: all 0.3s ease;
+            width: 80%;  /* Take full width of grid cell */
+            box-shadow: 0 0 5px #fff;
+        }
+        .nav-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 10px #fff;
+        }
+        .title {
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 2rem;
+            margin-bottom: 30px;
+            text-shadow: 0 0 5px #fff, 0 0 10px #5271ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="text-container">
+        <div class="title">Please Select</div>
+        <div class="navigation">
+            <!-- Buttons will be added here via JavaScript -->
+        </div>
+    </div>
+</body>
+<script>
+    // List of files to create buttons for
+    const files = [
+        { name: "ASCII Art", path: "ascii.html" },
+        { name: "Balls", path: "balls.html" },
+        { name: "Circles", path: "circles.html" },
+        { name: "3D Cube", path: "cube.html" },
+        { name: "Game of Life", path: "game_of_life.html" },
+        { name: "Quotes", path: "quotes.html" },
+        { name: "Snake Game", path: "snake.html" },
+        { name: "Wave Effect", path: "wave.html" }
+    ];
+    
+    // Function to create navigation buttons
+    function createNavigationButtons() {
+        const navigationDiv = document.querySelector('.navigation');
+        
+        files.forEach(file => {
+            // Don't create a button for the current page
+            if (window.location.pathname.endsWith(file.path)) {
+                return;
+            }
+            
+            const button = document.createElement('a');
+            button.textContent = file.name;
+            button.href = file.path;
+            button.className = 'nav-button';
+            
+            navigationDiv.appendChild(button);
+        });
+    }
+
+    // Create buttons when the page loads
+    window.addEventListener('DOMContentLoaded', createNavigationButtons);
+</script>
+</html>

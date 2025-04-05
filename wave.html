@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Wave Animation</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            margin: 0;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .canvas-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="canvas-container">
+        <canvas id="cubeCanvas"></canvas>
+    </div>
+
+    <script>
+        // Get the canvas and context
+        const canvas = document.getElementById('cubeCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set initial canvas size
+        function resizeCanvas() {
+            const container = document.querySelector('.canvas-container');
+            const maxWidth = container.clientWidth;
+            const maxHeight = container.clientHeight;
+            
+            // Maintain aspect ratio of 720:576
+            const aspectRatio = 720 / 576;
+            
+            let width = maxWidth;
+            let height = width / aspectRatio;
+            
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = height * aspectRatio;
+            }
+            
+            // Set canvas size (capped at original dimensions)
+            canvas.width = Math.min(width, 720);
+            canvas.height = Math.min(height, 576);
+        }
+        
+        // Initial resize and event listener
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Sound wave properties
+        const wave = {
+            time: 0,
+            speed: 0.1,  // Increased from 0.05 for faster animation
+            segments: 200,
+            amplitude: 120,
+            frequency: 0.03,  // Increased from 0.02 for more visible waves
+            centerY: 0
+        };
+        
+        // Function to get wave height at a specific x position and time
+        function getWaveY(x, time) {
+            // Simpler wave function with more prominent primary sine wave
+            const primaryWave = Math.sin(x * wave.frequency + time) * wave.amplitude * 0.8;
+            const subtleModulation = Math.sin(x * wave.frequency * 2 + time * 0.5) * wave.amplitude * 0.1;
+            
+            return primaryWave + subtleModulation;
+        }
+        
+        // Draw function
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Set up drawing properties
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 4;
+            
+            // Add glow effect
+            ctx.shadowColor = 'white';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Center of the wave vertically
+            wave.centerY = canvas.height / 2;
+            
+            // Draw the main wave
+            ctx.beginPath();
+            
+            // Calculate segment width
+            const segmentWidth = canvas.width / wave.segments;
+            
+            // Start at the leftmost point
+            const startX = 0;
+            const startY = wave.centerY + getWaveY(0, wave.time);
+            ctx.moveTo(startX, startY);
+            
+            // Create points along the wave
+            for (let i = 1; i <= wave.segments; i++) {
+                const x = i * segmentWidth;
+                const y = wave.centerY + getWaveY(i, wave.time);
+                ctx.lineTo(x, y);
+            }
+            
+            ctx.stroke();
+            
+            // Draw a mirrored wave (optional for more complex visualization)
+            ctx.beginPath();
+            ctx.moveTo(startX, wave.centerY - (startY - wave.centerY));
+            
+            for (let i = 1; i <= wave.segments; i++) {
+                const x = i * segmentWidth;
+                const y = wave.centerY - (getWaveY(i, wave.time));
+                ctx.lineTo(x, y);
+            }
+            
+            ctx.stroke();
+            
+            // Update time for next frame
+            wave.time += wave.speed;
+        }
+        
+        // Animation loop
+        function animate() {
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
