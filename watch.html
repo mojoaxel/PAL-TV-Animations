@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Clock</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        body {
+            margin: 0;
+            background-color: black;
+            width: 100vw;
+            height: 100vh;
+        }
+        .text-container {
+            width: 720px;
+            max-width: 80%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            text-align: center;
+            position: absolute;
+            transition: all 0.1s ease-out;
+        }
+        #clock {
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 5rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px #fff, 0 0 10px #5271ff;
+        }
+        #date {
+            color: white;
+            font-family: "Courier New", monospace;
+            font-size: 1.7rem;
+            line-height: 2rem;
+            text-shadow: 0 0 3px #fff, 0 0 7px #5271ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="text-container">
+        <div id="clock"></div>
+        <div id="date"></div>
+    </div>
+</body>
+<script>
+    function updateClock() {
+        const now = new Date();
+        
+        // Format the time with leading zeros
+        let hours = String(now.getHours()).padStart(2, '0');
+        let minutes = String(now.getMinutes()).padStart(2, '0');
+        let seconds = String(now.getSeconds()).padStart(2, '0');
+        
+        // Format the time with static colons
+        const clockElement = document.getElementById('clock');
+        clockElement.innerHTML = `${hours}:${minutes}:${seconds}`;
+        
+        // Format the date (German style)
+        const germanDays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+        const germanMonths = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        
+        const dayName = germanDays[now.getDay()];
+        const monthName = germanMonths[now.getMonth()];
+        const day = now.getDate();
+        const year = now.getFullYear();
+        
+        // Display the date in German format
+        const dateElement = document.getElementById('date');
+        dateElement.textContent = `${dayName} ${day}. ${monthName} ${year}`;
+    }
+
+    // Bouncing animation setup
+    const container = document.querySelector('.text-container');
+    let posX = 100;
+    let posY = 100;
+    let speedX = 0.5; // pixels per animation frame
+    let speedY = 0.5;
+    
+    function animateBounce() {
+        const maxX = window.innerWidth - container.offsetWidth;
+        const maxY = window.innerHeight - container.offsetHeight;
+        
+        // Update position
+        posX += speedX;
+        posY += speedY;
+        
+        // Check for collisions with screen edges
+        if (posX <= 0 || posX >= maxX) {
+            speedX = -speedX; // Reverse X direction
+            posX = Math.max(0, Math.min(posX, maxX)); // Ensure position is within bounds
+        }
+        
+        if (posY <= 0 || posY >= maxY) {
+            speedY = -speedY; // Reverse Y direction
+            posY = Math.max(0, Math.min(posY, maxY)); // Ensure position is within bounds
+        }
+        
+        // Update container position
+        container.style.left = posX + 'px';
+        container.style.top = posY + 'px';
+        
+        requestAnimationFrame(animateBounce);
+    }
+
+    // Initialize position in center
+    function initPosition() {
+        posX = (window.innerWidth - container.offsetWidth) / 2;
+        posY = (window.innerHeight - container.offsetHeight) / 2;
+        container.style.left = posX + 'px';
+        container.style.top = posY + 'px';
+        
+        // Start animation after positioning
+        animateBounce();
+    }
+
+    // Update clock immediately
+    updateClock();
+    
+    // Then update it every second
+    setInterval(updateClock, 1000);
+    
+    // Start the bouncing animation after elements are loaded
+    window.addEventListener('load', initPosition);
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        const maxX = window.innerWidth - container.offsetWidth;
+        const maxY = window.innerHeight - container.offsetHeight;
+        posX = Math.min(posX, maxX);
+        posY = Math.min(posY, maxY);
+    });
+</script>
+</html>
